@@ -1,0 +1,17 @@
+﻿@model ServiceDesk.Entities.TicketModels
+@{
+    ViewData["Title"] = "Удаление заявки";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">Удалить заявку</h2>
+
+<div class="alert alert-danger">
+    <p>Вы уверены, что хотите удалить заявку <strong>@Model.TicketNumber</strong>?</p>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Удалить</button>
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+</form>

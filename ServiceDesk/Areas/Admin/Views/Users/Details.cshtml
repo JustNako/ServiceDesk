@@ -1,0 +1,41 @@
+﻿@model ServiceDesk.Entities.AppUser
+
+@{
+    ViewData["Title"] = "Детали пользователя";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">👤 Детали пользователя</h2>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Логин</dt>
+            <dd class="col-sm-9">@Model.UserName</dd>
+
+            <dt class="col-sm-3">Имя</dt>
+            <dd class="col-sm-9">@Model.FullName</dd>
+
+            <dt class="col-sm-3">Телефоны</dt>
+            <dd class="col-sm-9">
+                @if (Model.ContactPhones != null && Model.ContactPhones.Any())
+                {
+                    foreach (var phone in Model.ContactPhones)
+                    {
+                        <div>@phone</div>
+                    }
+                }
+                else
+                {
+                    <i>не указано</i>
+                }
+            </dd>
+        </dl>
+
+        <form asp-action="Delete" method="post" onsubmit="return confirm('Удалить пользователя?');">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <a class="btn btn-secondary" asp-action="Index">🔙 Назад</a>
+            <button type="submit" class="btn btn-danger ms-2">🗑 Удалить</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,73 @@
+﻿@model ServiceDesk.Entities.AppUser
+
+@{
+    ViewData["Title"] = "Создание пользователя";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    // Защита: если ContactPhones пустой, добавляем один для показа input
+    if (Model.ContactPhones == null)
+    {
+        Model.ContactPhones = new List<string> { "" };
+    }
+    else if (Model.ContactPhones.Count == 0)
+    {
+        Model.ContactPhones.Add("");
+    }
+}
+
+<h2 class="mb-4">👤 Создать пользователя</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="UserName" class="form-label">Логин</label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="FullName" class="form-label">Имя</label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <input name="password" type="password" class="form-control" required />
+        </div>
+
+        <div class="mb-3" id="phones">
+            <label class="form-label">Контактные номера</label>
+            @for (int i = 0; i < Model.ContactPhones.Count; i++)
+            {
+                <input type="text" name="ContactPhones[@i]" class="form-control mb-2"
+                       value="@Model.ContactPhones[i]" placeholder="+7 (___) ___-__-__" />
+            }
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="addPhone">➕ Добавить номер</button>
+        </div>
+    
+
+    <button type="submit" class="btn btn-success">💾 Сохранить</button>
+</form>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            function applyMask() {
+                $('input[name^="ContactPhones"]').inputmask("+7 (999) 999-99-99");
+            }
+
+            applyMask();
+
+            $('#addPhone').on('click', function () {
+                const index = $('#phones input').length;
+                const input = $(`<input type="text" name="ContactPhones[${index}]" class="form-control mb-2" placeholder="+7 (___) ___-__-__" />`);
+                $('#phones button').before(input); // вставить перед кнопкой
+                applyMask();
+            });
+        });
+    </script>
+}

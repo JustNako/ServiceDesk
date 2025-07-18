@@ -1,0 +1,46 @@
+﻿@model ServiceDesk.Entities.TicketModels
+@{
+    ViewData["Title"] = "Детали заявки";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">📋 Заявка @Model.TicketNumber</h2>
+
+<div class="mb-3">
+    <strong>Тема:</strong>
+    <div>@Model.Subject</div>
+</div>
+
+<div class="mb-3">
+    <strong>Контактные номера:</strong>
+    <ul>
+        @foreach (var phone in Model.ContactPhones)
+        {
+            <li>@phone</li>
+        }
+    </ul>
+</div>
+
+<div class="mb-3">
+    <strong>Описание:</strong>
+    <div>@Model.Description</div>
+</div>
+
+<div class="mb-3">
+    <strong>Статус:</strong>
+    <span class="badge bg-info">@Model.Status</span>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.AttachmentPath))
+{
+    <div class="mb-3">
+        <strong>Вложение:</strong><br />
+        <a href="@Model.AttachmentPath" target="_blank">@Model.AttachmentName</a>
+    </div>
+}
+
+<a asp-action="EditStatus" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Изменить статус</a>
+<a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">🗑 Удалить</a>
+
+<hr />
+<a asp-action="Index" class="btn btn-secondary">← Назад</a>

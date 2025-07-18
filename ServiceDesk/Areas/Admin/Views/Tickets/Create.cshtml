@@ -1,0 +1,67 @@
+﻿@model ServiceDesk.Entities.TicketModels
+
+@{
+    ViewData["Title"] = "Create Ticket";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">📝 Новая заявка</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="w-50">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <!-- Тема -->
+    <div class="mb-3">
+        <label class="form-label">Тема</label>
+        <input asp-for="Subject" class="form-control" maxlength="50" required />
+        @Html.ValidationMessageFor(model => model.Subject, "", new { @class = "text-danger" })
+    </div>
+
+    <!-- Контактные номера -->
+    <div class="mb-3">
+        <label class="form-label">Контактные номера</label>
+        <div id="phones">
+            <input name="ContactPhones" class="form-control mb-2" placeholder="+7 (___) ___-__-__" required />
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" id="addPhone">+ Добавить номер</button>
+    </div>
+
+    <!-- Описание -->
+    <div class="mb-3">
+        <label class="form-label">Описание</label>
+        <textarea asp-for="Description" class="form-control" rows="4" required></textarea>
+        @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+    </div>
+
+    <!-- Вложение -->
+    <div class="mb-3">
+        <label class="form-label">Вложение (необязательно)</label>
+        <input type="file" name="attachment" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a asp-action="Index" class="btn btn-outline-secondary ms-2">Назад к списку</a>
+</form>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            function applyMask() {
+                $('input[name^="ContactPhones"]').inputmask("+7 (999) 999-99-99");
+            }
+
+            applyMask();
+
+            $('#addPhone').on('click', function () {
+                const index = $('#phones input').length;
+                const input = $(`<input type="text" name="ContactPhones[${index}]" class="form-control mb-2" placeholder="+7 (___) ___-__-__" />`);
+                $('#phones').append(input);
+                applyMask();
+            });
+        });
+    </script>
+}
+

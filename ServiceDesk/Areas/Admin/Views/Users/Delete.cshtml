@@ -1,0 +1,45 @@
+﻿@model ServiceDesk.Entities.AppUser
+
+@{
+    ViewData["Title"] = "Удаление пользователя";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4 text-danger">Удаление пользователя</h2>
+
+<div class="alert alert-warning">
+    <strong>Вы уверены, что хотите удалить этого пользователя?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Логин</dt>
+            <dd class="col-sm-9">@Model.UserName</dd>
+
+            <dt class="col-sm-3">Имя</dt>
+            <dd class="col-sm-9">@Model.FullName</dd>
+
+            <dt class="col-sm-3">Телефоны</dt>
+            <dd class="col-sm-9">
+                @if (Model.ContactPhones != null && Model.ContactPhones.Any())
+                {
+                    foreach (var phone in Model.ContactPhones)
+                    {
+                        <div>@phone</div>
+                    }
+                }
+                else
+                {
+                    <i>не указано</i>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <a asp-action="Index" class="btn btn-secondary">🔙 Отмена</a>
+    <button type="submit" class="btn btn-danger">🗑 Удалить</button>
+</form>

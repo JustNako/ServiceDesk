@@ -1,0 +1,80 @@
+﻿@model List<ServiceDesk.Entities.TicketModels>
+
+@{
+    ViewData["Title"] = "Все заявки";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">📬 Все заявки</h2>
+
+<a class="btn btn-success mb-3" asp-area="Admin" asp-controller="Tickets" asp-action="Create">➕ Новая заявка</a>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>№</th>
+            <th>Тема</th>
+            <th>Статус</th>
+            <th>Дата</th>
+            
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ticket in Model)
+        {
+            <tr class="clickable-row" data-href="@Url.Action("Details", "Tickets", new { area = "Admin", id = ticket.Id })">
+                <td>@ticket.TicketNumber</td>
+                <td>@ticket.Subject</td>
+                <td>
+                    @switch (ticket.Status)
+                    {
+                        case ServiceDesk.Entities.TicketStatus.Created:
+                            <span class="badge bg-primary">🆕 Created</span>
+                            break;
+                        case ServiceDesk.Entities.TicketStatus.InProgress:
+                            <span class="badge bg-warning text-dark">🔄 In Progress</span>
+                            break;
+                        case ServiceDesk.Entities.TicketStatus.OnHold:
+                            <span class="badge bg-secondary">⏸️ On Hold</span>
+                            break;
+                        case ServiceDesk.Entities.TicketStatus.Closed:
+                            <span class="badge bg-success">✅ Closed</span>
+                            break;
+                    }
+                </td>
+                <td>@ticket.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>           
+            </tr>
+        }
+    </tbody>
+
+</table>
+
+@section Scripts {
+    <style>
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+            .clickable-row:hover {
+                background-color: rgba(0, 0, 0, 0.05); /* слегка тёмный фон */
+            }
+
+        
+
+        
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.clickable-row').forEach(row => {
+                row.addEventListener('click', function (e) {
+                    if (e.target.closest('a, button')) return;
+                    window.location = this.dataset.href;
+                });
+            });
+        });
+    </script>
+}
+
+

@@ -1,0 +1,27 @@
+﻿@model ServiceDesk.Entities.TicketModels
+@using ServiceDesk.Entities
+@{
+    ViewData["Title"] = "Изменение статуса";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">✏️ Изменить статус заявки @Model.TicketNumber</h2>
+
+<form asp-action="EditStatus" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Новый статус:</label>
+        <select name="status" class="form-select">
+            @foreach (var value in Enum.GetValues<TicketStatus>())
+            {
+                <option value="@value" selected="@(value == Model.Status)">
+                    @value
+                </option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a asp-action="Index" asp-route-id="@Model.Id" class="btn btn-secondary">Отмена</a>
+</form>

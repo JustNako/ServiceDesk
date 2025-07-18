@@ -1,0 +1,38 @@
+﻿@model List<ServiceDesk.Entities.AppUser>
+@{
+    ViewData["Title"] = "Пользователи";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">👥 Все пользователи</h2>
+
+<a class="btn btn-success mb-3" asp-action="Create">➕ Создать нового</a>
+
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Логин</th>
+            <th>Имя</th>
+            <th>Телефоны</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.FullName</td>
+                <td>
+                    @foreach (var phone in user.ContactPhones)
+                    {
+                        <div>@phone</div>
+                    }
+                </td>
+                <td>
+                    <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@user.Id">👁</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
