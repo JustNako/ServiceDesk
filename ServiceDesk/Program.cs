@@ -10,7 +10,7 @@ async Task SeedAdminUser(IServiceProvider services)
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
     string adminLogin = "admin";
-    string adminPass = "Admin123!"; // ты можешь сменить
+    string adminPass = "Admin123!";
 
     var admin = await userManager.FindByNameAsync(adminLogin);
     if (admin == null)
@@ -39,7 +39,15 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -53,7 +61,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
-
+app.UseStaticFiles();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
@@ -62,11 +70,10 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Redirect}/{action=ToAdmin}/{id?}");
+    pattern: "{Area=Admin}/{controller=Account}/{action=Login}/{id?}");
 
 await SeedAdminUser(app.Services);
 app.Run();
-
 
 
 
