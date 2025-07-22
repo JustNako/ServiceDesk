@@ -49,7 +49,7 @@ namespace ServiceDesk.Entities
         public string? AttachmentName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsDeleted { get; set; } = false;
-        public ComplainType ComplainType { get; set; } = ComplainType.General;
+        public ComplainType ComplainType { get; set; }
 
 
 

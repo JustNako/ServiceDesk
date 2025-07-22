@@ -22,25 +22,57 @@ namespace ServiceDesk.Areas.Admin.Controllers
             _context = context;
             _env = env;
         }
-        public IActionResult Index(string? subject, ComplainType? complaintType, TicketStatus? status)
+        public async Task<IActionResult> Index(string subject, ComplainType? complaintType, TicketStatus? status, int page = 1)
         {
-            var query = _context.Tickets.Where(t => !t.IsDeleted);
+            int pageSize = 15;
+
+            var query = _context.Tickets
+                .Where(t => !t.IsDeleted);
+
 
             if (!string.IsNullOrEmpty(subject))
                 query = query.Where(t => t.Subject.Contains(subject));
+
 
             if (complaintType.HasValue)
                 query = query.Where(t => t.ComplainType == complaintType.Value);
 
             if (status.HasValue)
                 query = query.Where(t => t.Status == status.Value);
+            
+            
+
+            var complaintTypeCounts = await _context.Tickets
+                .Where(t => !t.IsDeleted)
+                .GroupBy(t => t.ComplainType)
+                .ToDictionaryAsync(g => g.Key, g => g.Count());
+            
+
+            var statusCounts = await _context.Tickets
+                .Where(t => !t.IsDeleted)
+                .GroupBy(t => t.Status)
+                .ToDictionaryAsync(g => g.Key, g => g.Count());
+
+            ViewBag.ComplaintTypeCounts = complaintTypeCounts;
+            ViewBag.StatusCounts = statusCounts;
+
+
+            var totalItems = await query.CountAsync();
+            var tickets = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();  
 
             var model = new TicketFilterViewModel
             {
                 Subject = subject,
                 ComplaintType = complaintType,
                 Status = status,
-                Tickets = query.OrderByDescending(t => t.CreatedAt).ToList()
+                Tickets = tickets,
+                Page = page,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                PageSize = pageSize
             };
 
             return View(model);

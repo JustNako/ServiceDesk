@@ -16,27 +16,35 @@
     <div class="col-md-4">  
         <input type="text" name="subject" value="@Model.Subject" class="form-control" placeholder="🔍 Поиск по теме" />  
     </div>  
-    <div class="col-md-3">  
+    <div class="col-md-3">          
         <select name="complaintType" class="form-select">  
             <option value="">Тип жалобы</option>  
-            @foreach (var type in Enum.GetValues(typeof(ComplainType)))  
-            {  
-                <option value="@type" selected="@(Model.ComplaintType == (ComplainType)type ? "selected" : null)">  
-                    @(((ComplainType)type).GetDescription())  
-                </option>  
-            }  
-        </select>  
+            @foreach (var type in Enum.GetValues(typeof(ComplainType)).Cast<ComplainType>())
+            {
+                int count = (ViewBag.ComplaintTypeCounts as Dictionary<ComplainType, int>)?.GetValueOrDefault(type) ?? 0;
+    
+                <option value="@type" selected="@(Model.ComplaintType == type ? "selected" : null)">
+                    @type.GetDescription() (@count)
+                </option>
+            }
+
+
+        </select>
     </div>  
     <div class="col-md-3">  
         <select name="status" class="form-select">  
             <option value="">Статус</option>  
-            @foreach (var status in Enum.GetValues(typeof(TicketStatus)))  
+            @foreach (var status in Enum.GetValues(typeof(TicketStatus)).Cast<TicketStatus>())  
             {  
-                <option value="@status" selected="@(Model.Status == (TicketStatus)status ? "selected" : null)">  
-                    @(((TicketStatus)status).GetDescription())  
+                var count = ViewBag.StatusCounts != null && ViewBag.StatusCounts.ContainsKey(status) 
+                            ? ViewBag.StatusCounts[status] 
+                            : 0;
+
+                <option value="@status" selected="@(Model.Status == status ? "selected" : null)">  
+                    @status.GetDescription() (@count)
                 </option>  
             }  
-        </select>  
+        </select>
     </div>  
     <div class="col-md-2">  
         <button type="submit" class="btn btn-primary w-100">🔎 Поиск</button>  
@@ -68,6 +76,26 @@
         }  
     </tbody>  
 </table>  
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new {
+                        page = i,
+                        subject = Model.Subject,
+                        complaintType = Model.ComplaintType,
+                        status = Model.Status
+                    })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
 
 @section Scripts {  
     <style>  
