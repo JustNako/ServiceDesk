@@ -9,18 +9,17 @@
 <a class="btn btn-success mb-3" asp-action="Create">➕ Создать нового</a>
 
 <table class="table table-bordered">
-    <thead class="table-dark">
-        <tr>
+    <thead class="table-dark">        
+        <tr> 
             <th>Логин</th>
             <th>Имя</th>
             <th>Телефоны</th>
-            <th></th>
-        </tr>
+        </tr>        
     </thead>
     <tbody>
         @foreach (var user in Model)
         {
-            <tr>
+            <tr class="clickable-row" data-href="@Url.Action("Details", "Users", new { area = "Admin", id = user.Id })">
                 <td>@user.UserName</td>
                 <td>@user.FullName</td>
                 <td>
@@ -29,10 +28,31 @@
                         <div>@phone</div>
                     }
                 </td>
-                <td>
-                    <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@user.Id">👁</a>
-                </td>
             </tr>
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.clickable-row').forEach(row => {
+                row.style.cursor = 'pointer';
+                row.addEventListener('click', function (e) {
+                    if (e.target.closest('a, button')) return; // игнор если клик по кнопке
+                    window.location = this.dataset.href;
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .clickable-row {
+            transition: background-color 0.2s ease;
+        }
+
+            .clickable-row:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+    </style>
+}

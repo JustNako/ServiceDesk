@@ -4,8 +4,13 @@ using ServiceDesk.Data;
 using ServiceDesk.Entities;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using ServiceDesk.ViewModels;
+
+
+
 
 namespace ServiceDesk.Areas.Admin.Controllers
+
 {
     [Area("Admin")]
     public class TicketsController : Controller
@@ -17,10 +22,28 @@ namespace ServiceDesk.Areas.Admin.Controllers
             _context = context;
             _env = env;
         }
-        public async Task<IActionResult> Index()
+        public IActionResult Index(string? subject, ComplainType? complaintType, TicketStatus? status)
         {
-            var tickets = await _context.Tickets.ToListAsync();
-            return View(tickets);
+            var query = _context.Tickets.Where(t => !t.IsDeleted);
+
+            if (!string.IsNullOrEmpty(subject))
+                query = query.Where(t => t.Subject.Contains(subject));
+
+            if (complaintType.HasValue)
+                query = query.Where(t => t.ComplainType == complaintType.Value);
+
+            if (status.HasValue)
+                query = query.Where(t => t.Status == status.Value);
+
+            var model = new TicketFilterViewModel
+            {
+                Subject = subject,
+                ComplaintType = complaintType,
+                Status = status,
+                Tickets = query.OrderByDescending(t => t.CreatedAt).ToList()
+            };
+
+            return View(model);
         }
 
         public IActionResult Create()
@@ -29,7 +52,7 @@ namespace ServiceDesk.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(TicketModels model, IFormFile? attachment)
+        public async Task<IActionResult> Create(TicketModels model, List<IFormFile> attachment)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -45,46 +68,61 @@ namespace ServiceDesk.Areas.Admin.Controllers
                 return View(model);
             }
 
-            if (attachment != null && attachment.Length > 0)
+            if (attachment != null && attachment.Any())
             {
+                if (attachment.Count > 5)
+                {
+                    ModelState.AddModelError("", "Можно прикрепить максимум 5 файлов.");
+                    return View(model);
+                }
+
                 var allowedExtensions = new[] { ".jpeg", ".jpg", ".png", ".pdf", ".zip", ".rar", ".doc", ".docx", ".xls", ".xlsx", ".txt" };
-                var fileExtension = Path.GetExtension(attachment.FileName).ToLower();
-                if (!allowedExtensions.Contains(fileExtension))
-                {
-                    ModelState.AddModelError("", "Недопустимый формат файла.");
-                    return View(model);
-                }
-
-                if (attachment.Length > 10 * 1024 * 1024)
-                {
-                    ModelState.AddModelError("", "Размер файла не должен превышать 10 МБ.");
-                    return View(model);
-                }
-
                 var folder = Path.Combine(_env.WebRootPath, "uploads", "tickets", nextId.ToString());
+
                 if (!Directory.Exists(folder))
-                {
                     Directory.CreateDirectory(folder);
-                }
-                var filePath = Path.Combine(folder, attachment.FileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var savedNames = new List<string>();
+                var savedPaths = new List<string>();
+
+                foreach (var file in attachment)
                 {
-                    await attachment.CopyToAsync(stream);
+                    var extension = Path.GetExtension(file.FileName).ToLower();
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        ModelState.AddModelError("", $"Недопустимый формат файла: {file.FileName}");
+                        return View(model);
+                    }
+
+                    if (file.Length > 10 * 1024 * 1024)
+                    {
+                        ModelState.AddModelError("", $"Размер файла '{file.FileName}' превышает 10 МБ.");
+                        return View(model);
+                    }
+
+                    var filePath = Path.Combine(folder, file.FileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    savedNames.Add(file.FileName);
+                    savedPaths.Add($"/uploads/tickets/{nextId}/{file.FileName}");
+
                 }
 
-                model.AttachmentName = attachment.FileName;
-                model.AttachmentPath = $"/uploads/tickets/{nextId}/{attachment.FileName}";
-
+                model.AttachmentName = string.Join(" ; " +
+                    "\n", savedNames);
+                model.AttachmentPath = string.Join(" ; " +
+                    "\n", savedPaths);
             }
-
-
+            model.CreatedAt = DateTime.Now;
+            model.IsDeleted = false;
 
             _context.Tickets.Add(model);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
-
         }
 
 
@@ -119,10 +157,12 @@ namespace ServiceDesk.Areas.Admin.Controllers
                     System.IO.File.Delete(filePath);
                 }
             }
-            _context.Tickets.Remove(ticket);
+
+            ticket.IsDeleted = true; // Soft delete
+            _context.Tickets.Update(ticket);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Details));
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> EditStatus(int id)
@@ -143,6 +183,8 @@ namespace ServiceDesk.Areas.Admin.Controllers
 
             return RedirectToAction("Index", new {id = ticket.Id});
         }
+
+        
 
     }
 

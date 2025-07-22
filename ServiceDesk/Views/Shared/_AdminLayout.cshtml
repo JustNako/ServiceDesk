@@ -1,5 +1,5 @@
 ﻿@{
-    Layout = null;
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
 }
 
 <!DOCTYPE html>
@@ -50,11 +50,25 @@
     <!-- Sidebar -->
     <div class="sidebar d-flex flex-column p-3">
         <h4 class="text-white px-3">Admin Panel</h4>
-        <a asp-controller="Dashboard" asp-action="Index" class="active"><i class="fas fa-chart-line me-2"></i> Dashboard</a>
-        <a asp-controller="Tickets" asp-action="Index"><i class="fas fa-ticket-alt me-2"></i> Tickets</a>
-        <a asp-controller="Users" asp-action="Index"><i class="fas fa-users me-2"></i> Users</a>
-        <a asp-controller="Categories" asp-action="Index"><i class="fas fa-folder-open me-2"></i> Categories</a>
-        <a asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+        <a asp-controller="Dashboard" asp-action="Index"
+           class="@(currentController == "Dashboard" ? "active" : "")">
+            <i class="fas fa-chart-line me-2"></i> Панель
+        </a>
+
+        <a asp-controller="Tickets" asp-action="Index"
+           class="@(currentController == "Tickets" ? "active" : "")">
+            <i class="fas fa-ticket-alt me-2"></i> Заявки
+        </a>
+
+        <a asp-controller="Users" asp-action="Index"
+           class="@(currentController == "Users" ? "active" : "")">
+            <i class="fas fa-users me-2"></i> Пользователи
+        </a>
+
+        <a asp-controller="Account" asp-action="Logout"
+            class="@(currentController == "Account" ? "active" : "")">
+            <i class="fas fa-account me-2"></i> Выйти
+        </a>
     </div>
 
     <!-- Main Content -->

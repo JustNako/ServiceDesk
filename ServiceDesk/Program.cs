@@ -4,6 +4,31 @@ using ServiceDesk.Data;
 using ServiceDesk.Entities;
 
 
+async Task SeedAdminUser(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
+    string adminLogin = "admin";
+    string adminPass = "Admin123!"; // ты можешь сменить
+
+    var admin = await userManager.FindByNameAsync(adminLogin);
+    if (admin == null)
+    {
+        var newAdmin = new AppUser
+        {
+            UserName = adminLogin,
+            FullName = "Администратор",
+            ContactPhonesJson = "[]",
+            IsDeleted = false,
+            IsSystemAdmin = true
+        };
+
+        await userManager.CreateAsync(newAdmin, adminPass);
+    }
+}
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -39,4 +64,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Redirect}/{action=ToAdmin}/{id?}");
 
+await SeedAdminUser(app.Services);
 app.Run();
+
+
+
+

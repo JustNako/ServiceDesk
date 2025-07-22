@@ -19,7 +19,9 @@ namespace ServiceDesk.Areas.Admin.Controllers
         // Показать список всех пользователей
         public IActionResult Index()
         {
-            var users = _userManager.Users.ToList();
+            var users = _userManager.Users
+                .Where(u=> !u.IsDeleted)
+                .ToList();
             return View(users);
         }
 
@@ -69,9 +71,17 @@ namespace ServiceDesk.Areas.Admin.Controllers
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
-            await _userManager.DeleteAsync(user);
+            if (user.IsSystemAdmin)
+            {
+                TempData["Error"] = "Системного администратора удалить нельзя.";
+                return RedirectToAction("Index");
+            }
+
+            user.IsDeleted = true;
+            await _userManager.UpdateAsync(user);
             return RedirectToAction("Index");
         }
+
 
         // GET: Details
         public async Task<IActionResult> Details(string id)

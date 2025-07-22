@@ -1,6 +1,6 @@
 namespace ServiceDesk.Models
 {
-    public class ErrorViewModel
+    public class TicketFilterViewModel
     {
         public string? RequestId { get; set; }
 

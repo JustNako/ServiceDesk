@@ -181,6 +181,12 @@ namespace ServiceDesk.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemAdmin")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -241,6 +247,9 @@ namespace ServiceDesk.Migrations
                     b.Property<string>("AttachmentPath")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ComplainType")
+                        .HasColumnType("int");
+
                     b.Property<string>("ContactPhonesJson")
                         .HasColumnType("nvarchar(max)");
 
@@ -250,6 +259,9 @@ namespace ServiceDesk.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

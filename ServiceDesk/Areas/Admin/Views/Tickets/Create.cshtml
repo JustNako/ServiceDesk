@@ -10,6 +10,16 @@
 <form asp-action="Create" method="post" enctype="multipart/form-data" class="w-50">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+    <!-- Тип -->
+    <div class="mb-3">
+        <label asp-for="ComplainType" class="form-label">Тип жалобы</label>
+        <select asp-for="ComplainType" asp-items="Html.GetEnumSelectList<ServiceDesk.Entities.ComplainType>()" class="form-select">
+            <option value="">-- Выберите тип --</option>
+        </select>
+        <span asp-validation-for="ComplainType" class="text-danger"></span>
+    </div>
+
+
     <!-- Тема -->
     <div class="mb-3">
         <label class="form-label">Тема</label>
@@ -36,7 +46,7 @@
     <!-- Вложение -->
     <div class="mb-3">
         <label class="form-label">Вложение (необязательно)</label>
-        <input type="file" name="attachment" class="form-control" />
+        <input type="file" name="attachment" multiple class="form-control" />
     </div>
 
     <button type="submit" class="btn btn-primary">Сохранить</button>

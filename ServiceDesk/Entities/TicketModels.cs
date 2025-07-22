@@ -9,7 +9,7 @@ namespace ServiceDesk.Entities
 
     public enum TicketStatus
     {
-        [Description("Создан")]
+        [Description("Создан")]        
         Created,
         [Description("В процессе")]
         InProgress,
@@ -48,6 +48,8 @@ namespace ServiceDesk.Entities
         public string? AttachmentPath { get; set; }
         public string? AttachmentName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public bool IsDeleted { get; set; } = false;
+        public ComplainType ComplainType { get; set; } = ComplainType.General;
 
 
 

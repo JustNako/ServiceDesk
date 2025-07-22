@@ -1,5 +1,6 @@
 ﻿@model ServiceDesk.Entities.TicketModels
 @using ServiceDesk.Entities
+@using ServiceDesk.Helpers
 @{
     ViewData["Title"] = "Изменение статуса";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -16,7 +17,7 @@
             @foreach (var value in Enum.GetValues<TicketStatus>())
             {
                 <option value="@value" selected="@(value == Model.Status)">
-                    @value
+                    @value.GetDescription()
                 </option>
             }
         </select>
