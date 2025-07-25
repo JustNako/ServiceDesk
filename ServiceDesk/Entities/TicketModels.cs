@@ -51,7 +51,31 @@ namespace ServiceDesk.Entities
         public bool IsDeleted { get; set; } = false;
         public ComplainType ComplainType { get; set; }
 
+        [RequiredForApi(ErrorMessage = "RemoteUrl обязательно для API-запросов")]
+        public string? RemoteUrl { get; set; } 
 
 
     }
 }
+
+
+public class RequiredForApiAttribute : ValidationAttribute
+{
+    protected override ValidationResult IsValid(object? value, ValidationContext validationContext)
+    {
+        var httpContextAccessor = (IHttpContextAccessor)validationContext.GetService(typeof(IHttpContextAccessor))!;
+        var path = httpContextAccessor.HttpContext?.Request.Path.Value;
+
+        // Если это вызов из API (например, начинается с /api/)
+        if (path != null && path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+            {
+                return new ValidationResult(ErrorMessage ?? "Поле обязательно для API-запросов");
+            }
+        }
+
+        return ValidationResult.Success!;
+    }
+}
+

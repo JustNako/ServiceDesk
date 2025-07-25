@@ -150,12 +150,18 @@ namespace ServiceDesk.Areas.Admin.Controllers
             }
             model.CreatedAt = DateTime.Now;
             model.IsDeleted = false;
+            model.RemoteUrl = model.RemoteUrl ?? "";
 
             _context.Tickets.Add(model);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
         }
+
+
+        
+
+
 
 
         public async Task<IActionResult> Details(int id)
