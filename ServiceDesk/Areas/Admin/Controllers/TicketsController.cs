@@ -2,9 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Data;
 using ServiceDesk.Entities;
-using System.Net.Mail;
-using System.Text.RegularExpressions;
 using ServiceDesk.ViewModels;
+using System.Net.Mail;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 
 
@@ -84,7 +85,7 @@ namespace ServiceDesk.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(TicketModels model, List<IFormFile> attachment)
+        public async Task<IActionResult> Create(TicketModels model, List<IFormFile> attachment, List<string> contactPhones)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -94,11 +95,14 @@ namespace ServiceDesk.Areas.Admin.Controllers
             int nextId = lastTicket?.Id + 1 ?? 1;
             model.TicketNumber = $"T-{nextId:D5}";
 
-            if (model.ContactPhones.Any(p => !Regex.IsMatch(p, @"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$")))
+            if (contactPhones.Any(p => !Regex.IsMatch(p, @"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$")))
             {
                 ModelState.AddModelError("", "Некорректный формат номера телефона.");
                 return View(model);
             }
+
+            string? attachmentPath = null;
+            string? attachmentName = null;
 
             if (attachment != null && attachment.Any())
             {
@@ -142,34 +146,67 @@ namespace ServiceDesk.Areas.Admin.Controllers
                     savedPaths.Add($"/uploads/tickets/{nextId}/{file.FileName}");
 
                 }
-
-                model.AttachmentName = string.Join(" ; " +
-                    "\n", savedNames);
-                model.AttachmentPath = string.Join(" ; " +
-                    "\n", savedPaths);
+                attachmentName = string.Join(";\n", savedNames);
+                attachmentPath = string.Join(";\n", savedPaths);
             }
             model.CreatedAt = DateTime.Now;
             model.IsDeleted = false;
             model.RemoteUrl = model.RemoteUrl ?? "";
+            model.ContactPhonesJson = JsonSerializer.Serialize(contactPhones);
 
             _context.Tickets.Add(model);
             await _context.SaveChangesAsync();
+
+            // Обновим напрямую нужные поля
+            if (attachmentPath != null || attachmentName != null)
+            {
+                model = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == model.Id);
+                if (model != null)
+                {
+                    _context.Entry(model).Property("AttachmentName").CurrentValue = attachmentName;
+                    _context.Entry(model).Property("AttachmentPath").CurrentValue = attachmentPath;
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             return RedirectToAction("Index");
         }
 
 
-        
+
 
 
 
 
         public async Task<IActionResult> Details(int id)
         {
-            var ticket = await _context.Tickets.FindAsync(id);
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
+
+            // Контактные номера
+            var phones = string.IsNullOrEmpty(ticket.ContactPhonesJson)
+                ? new List<string>()
+                : JsonSerializer.Deserialize<List<string>>(ticket.ContactPhonesJson) ?? new();
+            ViewBag.ContactPhones = phones;
+
+            // Получение файлов из папки /uploads/tickets/{id}/
+            var folderPath = Path.Combine(_env.WebRootPath, "uploads", "tickets", id.ToString());
+            var attachments = new List<string>();
+
+            if (Directory.Exists(folderPath))
+            {
+                attachments = Directory.GetFiles(folderPath)
+                    .Select(path => $"/uploads/tickets/{id}/{Path.GetFileName(path)}")
+                    .ToList();
+            }
+
+            ViewBag.Attachments = attachments;
+
             return View(ticket);
         }
+
+
+
 
 
 
@@ -187,12 +224,20 @@ namespace ServiceDesk.Areas.Admin.Controllers
             var ticket = await _context.Tickets.FindAsync(id);
             if (ticket == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(ticket.AttachmentPath))
+            // Получаем путь к файлам напрямую из базы
+            var entry = _context.Entry(ticket);
+            var attachmentPath = entry.Property<string>("AttachmentPath").CurrentValue;
+
+            if (!string.IsNullOrEmpty(attachmentPath))
             {
-                var filePath = Path.Combine(_env.WebRootPath, ticket.AttachmentPath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
-                if (System.IO.File.Exists(filePath))
+                var paths = attachmentPath.Split(";\n", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var relativePath in paths)
                 {
-                    System.IO.File.Delete(filePath);
+                    var filePath = Path.Combine(_env.WebRootPath, relativePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
                 }
             }
 
@@ -202,6 +247,7 @@ namespace ServiceDesk.Areas.Admin.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
 
         public async Task<IActionResult> EditStatus(int id)
         {

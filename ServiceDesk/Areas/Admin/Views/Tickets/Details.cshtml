@@ -1,56 +1,54 @@
-﻿@using System.IO;
+﻿@using System.IO
 @using ServiceDesk.Helpers
 @using ServiceDesk.Entities;
-@model ServiceDesk.Entities.TicketModels  
-@{  
-    ViewData["Title"] = "Детали заявки";  
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";  
-}  
+@model ServiceDesk.Entities.TicketModels
 
+@{
+    ViewData["Title"] = "Детали заявки";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var phones = ViewBag.ContactPhones as List<string> ?? new();
+    var attachments = ViewBag.Attachments as List<string> ?? new();
+}
 
-<h2 class="mb-4">📋 Заявка @Model.TicketNumber</h2>  
+<h2 class="mb-4">📋 Заявка @Model.TicketNumber</h2>
 
-<div class="mb-3">  
-    <strong>Тема:</strong>  
-    <div>@Model.Subject</div>  
-</div>  
+<div class="mb-3">
+    <strong>Тема:</strong>
+    <div>@Model.Subject</div>
+</div>
 
-<div class="mb-3">  
-    <strong>Тип жалобы:</strong>  
+<div class="mb-3">
+    <strong>Тип жалобы:</strong>
     <span class="badge bg-secondary">@Model.ComplainType.GetDescription()</span>
 </div>
 
-<div class="mb-3">  
-    <strong>Контактные номера:</strong>  
-    <ul>  
-        @foreach (var phone in Model.ContactPhones)  
-        {  
-            <li>@phone</li>  
-        }  
-    </ul>  
-</div>  
+<div class="mb-3">
+    <strong>Контактные номера:</strong>
+    <ul>
+        @foreach (var phone in phones)
+        {
+            <li>@phone</li>
+        }
+    </ul>
+</div>
 
-<div class="mb-3">  
-    <strong>Описание:</strong>  
-    <div>@Model.Description</div>  
-</div>  
+<div class="mb-3">
+    <strong>Описание:</strong>
+    <div>@Model.Description</div>
+</div>
 
-<div class="mb-3">      
-     <strong>Статус:</strong>
-     <span class="badge @Model.Status.GetBadgeClass()">@Model.Status.GetDescription()</span>
-    
-</div>  
+<div class="mb-3">
+    <strong>Статус:</strong>
+    <span class="badge @Model.Status.GetBadgeClass()">@Model.Status.GetDescription()</span>
+</div>
 
-
-
-@if (!string.IsNullOrEmpty(Model.AttachmentPath))
+@if (attachments.Any())
 {
-    var filePaths = Model.AttachmentPath.Split(";", StringSplitOptions.RemoveEmptyEntries);
     <h5>📎 Вложения:</h5>
     <ul>
-        @foreach (var filePath in filePaths)
+        @foreach (var filePath in attachments)
         {
-            var fileName = filePath.Split('/').Last();
+            var fileName = System.IO.Path.GetFileName(filePath.Trim());
             <li>
                 <a href="@filePath" target="_blank">
                     <i class="fas fa-file me-1"></i> @fileName
@@ -60,8 +58,9 @@
     </ul>
 }
 
-<a asp-action="EditStatus" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Изменить статус</a>  
-<a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">🗑 Удалить</a>  
 
-<hr />  
+<a asp-action="EditStatus" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Изменить статус</a>
+<a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">🗑 Удалить</a>
+
+<hr />
 <a asp-action="Index" class="btn btn-secondary">← Назад</a>

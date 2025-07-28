@@ -1,8 +1,10 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ServiceDesk.Entities
 {
@@ -30,23 +32,18 @@ namespace ServiceDesk.Entities
         public string Description { get; set; } = string.Empty;
 
         //T-00001
+
+
+        [System.Text.Json.Serialization.JsonIgnore]
         public string TicketNumber{ get; set; } = string.Empty;
 
         public string? ContactPhonesJson { get; set; }
 
-        [NotMapped]
-        public List<string> ContactPhones
-        {
-            get => string.IsNullOrEmpty(ContactPhonesJson)
-                   ? new List<string>()
-                   : JsonSerializer.Deserialize<List<string>>(ContactPhonesJson) ?? new();
-            set => ContactPhonesJson = JsonSerializer.Serialize(value);
-        }
+        
 
         public TicketStatus Status { get; set; } = TicketStatus.Created;
 
-        public string? AttachmentPath { get; set; }
-        public string? AttachmentName { get; set; }
+        
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsDeleted { get; set; } = false;
         public ComplainType ComplainType { get; set; }
