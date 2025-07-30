@@ -7,6 +7,8 @@ using Microsoft.OpenApi.Models;
 using ServiceDesk.Data;
 using ServiceDesk.Entities;
 using System.Text;
+using System.Text.Json.Serialization;
+
 
 async Task SeedAdminUser(IServiceProvider services)
 {
@@ -111,6 +113,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 
 

@@ -183,27 +183,22 @@ namespace ServiceDesk.Areas.Admin.Controllers
             var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
-            // Контактные номера
             var phones = string.IsNullOrEmpty(ticket.ContactPhonesJson)
                 ? new List<string>()
                 : JsonSerializer.Deserialize<List<string>>(ticket.ContactPhonesJson) ?? new();
-            ViewBag.ContactPhones = phones;
 
-            // Получение файлов из папки /uploads/tickets/{id}/
-            var folderPath = Path.Combine(_env.WebRootPath, "uploads", "tickets", id.ToString());
-            var attachments = new List<string>();
-
-            if (Directory.Exists(folderPath))
-            {
-                attachments = Directory.GetFiles(folderPath)
-                    .Select(path => $"/uploads/tickets/{id}/{Path.GetFileName(path)}")
+            var attachments = string.IsNullOrEmpty(ticket.AttachmentPath)
+                ? new List<string>()
+                : ticket.AttachmentPath.Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
                     .ToList();
-            }
 
+            ViewBag.ContactPhones = phones;
             ViewBag.Attachments = attachments;
 
             return View(ticket);
         }
+
 
 
 

@@ -7,6 +7,7 @@ using ServiceDesk.Entities;
 using ServiceDesk.ViewModels;
 using System;
 using System.Linq;
+using System.Text.Json;
 
 namespace ServiceDesk.Controllers.Api
 {
@@ -36,31 +37,48 @@ namespace ServiceDesk.Controllers.Api
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTicket([FromForm] TicketModels model, List<IFormFile>? files)
+        public async Task<IActionResult> CreateTicket([FromForm] TicketApiDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var lastTicket = _context.Tickets.OrderByDescending(t => t.Id).FirstOrDefault();
+            var lastTicket = await _context.Tickets.OrderByDescending(t => t.Id).FirstOrDefaultAsync();
             int nextId = lastTicket?.Id + 1 ?? 1;
-            model.TicketNumber = $"T-{nextId:D5}";
-            model.CreatedAt = DateTime.Now;
-            model.IsDeleted = false;
 
-            List<string> savedNames = new();
-            List<string> savedPaths = new();
-
-            if (files != null && files.Any())
+            // Создание модели заявки
+            var model = new TicketModels
             {
-                if (files.Count > 5)
+                Subject = dto.Subject,
+                Description = dto.Description,
+                ContactPhonesJson = JsonSerializer.Serialize(dto.ContactPhones),
+                RemoteUrl = dto.RemoteUrl,
+                ComplainType = dto.ComplainType,
+                TicketNumber = $"T-{nextId:D5}",
+                CreatedAt = DateTime.Now,
+                IsDeleted = false,
+                Status = TicketStatus.Created
+            };
+
+            _context.Tickets.Add(model);
+            await _context.SaveChangesAsync(); // Нужно, чтобы получить model.Id
+
+            string? attachmentName = null;
+            string? attachmentPath = null;
+
+            if (dto.Files != null && dto.Files.Any())
+            {
+                if (dto.Files.Count > 5)
                     return BadRequest("Максимум 5 файлов.");
 
-                var folder = Path.Combine(_env.WebRootPath, "uploads", "tickets", $"remote_{nextId}");
+                var folder = Path.Combine(_env.WebRootPath, "uploads", "tickets", $"remote_{model.Id}");
                 Directory.CreateDirectory(folder);
 
                 var allowedExtensions = new[] { ".jpeg", ".jpg", ".png", ".pdf", ".zip", ".rar", ".doc", ".docx", ".xls", ".xlsx", ".txt" };
 
-                foreach (var file in files)
+                var savedNames = new List<string>();
+                var savedPaths = new List<string>();
+
+                foreach (var file in dto.Files)
                 {
                     var ext = Path.GetExtension(file.FileName).ToLower();
                     if (!allowedExtensions.Contains(ext))
@@ -74,25 +92,32 @@ namespace ServiceDesk.Controllers.Api
                     await file.CopyToAsync(stream);
 
                     savedNames.Add(file.FileName);
-                    savedPaths.Add($"/uploads/tickets/remote_{nextId}/{file.FileName}");
+                    savedPaths.Add($"/uploads/tickets/remote_{model.Id}/{file.FileName}");
                 }
+
+                attachmentName = string.Join(";\n", savedNames);
+                attachmentPath = string.Join(";\n", savedPaths);
             }
 
-            _context.Tickets.Add(model);
-            await _context.SaveChangesAsync();
+            // Обновление скрытых полей
+            if (attachmentName != null || attachmentPath != null)
+            {
+                _context.Entry(model).Property("AttachmentName").CurrentValue = attachmentName;
+                _context.Entry(model).Property("AttachmentPath").CurrentValue = attachmentPath;
+                await _context.SaveChangesAsync();
+            }
 
             return Ok(new
             {
                 model.Id,
                 model.TicketNumber,
                 model.RemoteUrl,
-                Files = savedNames.Select((name, i) => new
-                {
-                    FileName = name,
-                    Url = savedPaths[i]
-                }).ToList()
+                model.ComplainType,
+                Files = dto.Files?.Select(f => f.FileName).ToList()
             });
         }
+
+
 
 
 

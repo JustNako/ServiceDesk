@@ -23,6 +23,7 @@ namespace ServiceDesk.Entities
     }
     public class TicketModels
     {
+        [Key]
         public int Id { get; set; }
 
         [Required, MaxLength(50)]
@@ -34,22 +35,35 @@ namespace ServiceDesk.Entities
         //T-00001
 
 
-        [System.Text.Json.Serialization.JsonIgnore]
+        [JsonIgnore]
+        [BindNever]
         public string TicketNumber{ get; set; } = string.Empty;
 
         public string? ContactPhonesJson { get; set; }
 
-        
 
+        [JsonIgnore]
+        [BindNever]
         public TicketStatus Status { get; set; } = TicketStatus.Created;
 
         
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [JsonIgnore]
+        [BindNever]
         public bool IsDeleted { get; set; } = false;
+        [JsonIgnore]
+        [BindNever]
         public ComplainType ComplainType { get; set; }
 
         [RequiredForApi(ErrorMessage = "RemoteUrl обязательно для API-запросов")]
-        public string? RemoteUrl { get; set; } 
+        public string? RemoteUrl { get; set; }
+
+        
+        public string? AttachmentName { get; set; }
+
+        
+        public string? AttachmentPath { get; set; }
+
 
 
     }

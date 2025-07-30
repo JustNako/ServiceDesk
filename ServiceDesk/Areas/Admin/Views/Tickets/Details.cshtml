@@ -48,7 +48,7 @@
     <ul>
         @foreach (var filePath in attachments)
         {
-            var fileName = System.IO.Path.GetFileName(filePath.Trim());
+            var fileName = System.IO.Path.GetFileName(filePath);
             <li>
                 <a href="@filePath" target="_blank">
                     <i class="fas fa-file me-1"></i> @fileName
@@ -57,6 +57,7 @@
         }
     </ul>
 }
+
 
 
 <a asp-action="EditStatus" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Изменить статус</a>
