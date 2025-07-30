@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Data;
 using ServiceDesk.Entities;
+using ServiceDesk.Helpers;
 using ServiceDesk.ViewModels;
 using System;
 using System.Linq;
@@ -118,6 +119,20 @@ namespace ServiceDesk.Controllers.Api
         }
 
 
+        [HttpGet("complain-types")]
+        public IActionResult GetComplainTypes()
+        {
+            var types = Enum.GetValues(typeof(ComplainType))
+                .Cast<ComplainType>()
+                .Select(ct => new
+                {
+                    Value = (int)ct,
+                    Name = ct.ToString(),
+                    Description = ct.GetDescription() 
+                });
+
+            return Ok(types);
+        }
 
 
 
