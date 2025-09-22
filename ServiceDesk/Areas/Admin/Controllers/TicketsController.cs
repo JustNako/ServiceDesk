@@ -95,6 +95,12 @@ namespace ServiceDesk.Areas.Admin.Controllers
             int nextId = lastTicket?.Id + 1 ?? 1;
             model.TicketNumber = $"T-{nextId:D5}";
 
+            // Normalize phones: remove empty entries that can appear from dynamic inputs
+            contactPhones = contactPhones
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .ToList();
+
             if (contactPhones.Any(p => !Regex.IsMatch(p, @"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$")))
             {
                 ModelState.AddModelError("", "Некорректный формат номера телефона.");

@@ -7,28 +7,32 @@ using ServiceDesk.Entities;
 using ServiceDesk.Helpers;
 using ServiceDesk.ViewModels;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 
 namespace ServiceDesk.Controllers.Api
 {
-    [ApiController]    
+    [ApiController]
     [Route("api/[controller]")]
-    
+
     public class TicketsApiController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<TicketsApiController> _logger;
+        private static readonly ActivitySource activitySource = new("ServiceDesk");
 
-        public TicketsApiController(AppDbContext context, IWebHostEnvironment env)
+        public TicketsApiController(AppDbContext context, IWebHostEnvironment env, ILogger<TicketsApiController> logger)
         {
             _context = context;
             _env = env;
+            _logger = logger;
         }
 
 
         [Authorize]
-        [HttpGet("{id}")]        
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetTicket(int id)
         {
             var ticket = await _context.Tickets.FindAsync(id);
@@ -128,16 +132,25 @@ namespace ServiceDesk.Controllers.Api
                 {
                     Value = (int)ct,
                     Name = ct.ToString(),
-                    Description = ct.GetDescription() 
+                    Description = ct.GetDescription()
                 });
 
             return Ok(types);
         }
 
 
+        [HttpGet("test-loki")]
+        public IActionResult Test()
+        {
+            using var activity = activitySource.StartActivity("Test Trace");
 
+            var traceId = Activity.Current?.TraceId.ToString();
+            var spanId = Activity.Current?.SpanId.ToString();
 
+            _logger.LogInformation("Test log with TraceId: {TraceId} and SpanId: {SpanId}", traceId, spanId);
 
+            return Ok(new { message = "Logged and Traced", traceId, spanId });
+        }
 
 
 

@@ -4,10 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 using ServiceDesk.Data;
 using ServiceDesk.Entities;
 using System.Text;
 using System.Text.Json.Serialization;
+using OpenTelemetry.Exporter.Prometheus;
+using OpenTelemetry.Trace;
+using System.IO;
+
 
 
 async Task SeedAdminUser(IServiceProvider services)
@@ -35,12 +44,72 @@ async Task SeedAdminUser(IServiceProvider services)
 }
 
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .Enrich.WithProperty("Application", "ServiceDesk") // имя приложения — будет видно в лейблах
+    .WriteTo.Console()
+    .WriteTo.GrafanaLoki("http://localhost:3100", labels: new[]
+    {
+        new LokiLabel { Key = "app", Value = "ServiceDesk" },
+        new LokiLabel { Key = "env", Value = "dev" }
+    })
+    .CreateLogger();
+
+
+
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+
+builder.Logging.ClearProviders();
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+    logging.SetResourceBuilder(
+        ResourceBuilder.CreateDefault()
+            .AddService(serviceName: "ServiceDesk", serviceVersion: "1.0.0"));
+    logging.AddOtlpExporter(options =>
+    {
+        options.Endpoint = new Uri("http://localhost:4317"); // куда шлём (Grafana Agent или OTel Collector)
+    });
+});
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddPrometheusExporter(); // ⚠️ экспортирует на /metrics
+
+        // Можно добавить кастомные метрики позже
+
+    })
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .SetResourceBuilder(
+                ResourceBuilder.CreateDefault().AddService("ServiceDesk"))
+            .AddOtlpExporter(opt =>
+            {
+                opt.Endpoint = new Uri("http://localhost:4317"); // Grafana Agent
+            });
+    });
+
+
+
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -122,12 +191,15 @@ builder.Services
 
 
 
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    var dataDir = Path.Combine(app.Environment.ContentRootPath, "App_Data");
+    Directory.CreateDirectory(dataDir);
+    db.Database.EnsureCreated();
 }
 
 // Configure the HTTP request pipeline.
@@ -138,20 +210,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ServiceDesk API V1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ServiceDesk API V1");
+});
+
 
 
 app.UseHttpsRedirection();
@@ -163,7 +228,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 app.MapStaticAssets();
-
+app.MapPrometheusScrapingEndpoint();
 
 app.MapControllerRoute(
     name: "areas",

@@ -1,0 +1,19 @@
+﻿server:
+  log_level: info
+  log_format: logfmt
+
+metrics:
+  wal_directory: /tmp/grafana-agent-wal
+  global:
+    scrape_interval: 15s
+
+traces:
+  configs:
+    - name: default
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+      remote_write:
+        - endpoint: http://tempo:4317
